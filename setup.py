@@ -21,16 +21,20 @@ setup(name='PyGrassClient',  # 包名
       packages=find_packages(),
       platforms=["all"],
       classifiers=[
-          'Intended Audience :: Developers',
-          'Operating System :: OS Independent',
-          'Natural Language :: Chinese (Simplified)',
+          "Development Status :: 5 - Production/Stable",
+          "Environment :: Web Environment",
+          "License :: OSI Approved :: Apache Software License",
+          "Natural Language :: English",
+          "Operating System :: OS Independent",
+          "Programming Language :: Python",
           "Programming Language :: Python :: 3",
           "Programming Language :: Python :: 3.8",
           "Programming Language :: Python :: 3.9",
           "Programming Language :: Python :: 3.10",
           "Programming Language :: Python :: 3.11",
           "Programming Language :: Python :: 3.12",
-          'Topic :: Software Development :: Libraries'
+          "Programming Language :: Python :: 3 :: Only",
+          "Topic :: Software Development :: Libraries",
       ],
       )
 
