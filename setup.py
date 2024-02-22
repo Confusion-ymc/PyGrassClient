@@ -10,7 +10,7 @@ setup(name='PyGrass',  # 包名
       long_description=long_description,
       author='confusion',
       author_email='1107238486@qq.com',
-      url='',
+      url='https://github.com/Confusion-ymc/PyGrass',
       install_requires=[
           'websocket-client==1.7.0',
           'loguru==0.7.2',
