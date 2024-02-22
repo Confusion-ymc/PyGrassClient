@@ -1,9 +1,10 @@
-.idea
+.env
+.venv
+env/
+venv/
 *.pyc
 __pycache__
-*~
-*\#
-.\#*
+
 
 build
 .build/
@@ -15,17 +16,8 @@ compliance/reports/
 .eggs
 .vscode
 
-# venv
-venv/
-.venv/
-.env/
-
 # PyCharm
 .idea/
 
 # Sphinx documentation
 docs/build/
-
-# Code coverage
-.coverage
-coverage.xml
