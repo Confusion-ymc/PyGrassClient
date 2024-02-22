@@ -8,6 +8,7 @@ setup(name='PyGrassClient',  # 包名
       version='1.0.0',  # 版本号
       description='Get Grass Python Package',
       long_description=long_description,
+      long_description_content_type='text/markdown',
       author='confusion',
       author_email='1107238486@qq.com',
       url='https://github.com/Confusion-ymc/PyGrassClient',
