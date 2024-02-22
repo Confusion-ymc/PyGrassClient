@@ -23,7 +23,7 @@ def parse_proxy_url(proxy_url):
     return scheme, host, port, auth
 
 
-class GrassClient:
+class PyGrassClient:
     def __init__(self, user_id, proxy_url=None):
         self.user_id = user_id
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"

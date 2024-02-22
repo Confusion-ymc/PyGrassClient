@@ -5,7 +5,7 @@ This is a python package for get grass score.
 ```
 #!/usr/bin/env python
 
-from PyGrass import GrassClient
+from PyGrassClient import PyGrassClient
 
-GrassClient(user_id="${userid}", proxy_url='${proxy_url}').run()
+PyGrassClient(user_id="${userid}", proxy_url='${proxy_url}').run()
 ```
