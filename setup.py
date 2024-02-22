@@ -5,7 +5,7 @@ from setuptools import find_packages
 with open("README.md", "r") as f:
     long_description = f.read()
 setup(name='PyGrassClient',  # 包名
-      version='1.0.0',  # 版本号
+      version='1.0.1',  # 版本号
       description='Get Grass Python Package',
       long_description=long_description,
       long_description_content_type='text/markdown',
