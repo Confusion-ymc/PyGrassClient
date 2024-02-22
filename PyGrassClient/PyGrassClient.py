@@ -80,6 +80,7 @@ class PyGrassClient:
             proxy_type, http_proxy_host, http_proxy_port, http_proxy_auth = parse_proxy_url(self.proxy_url)
         else:
             proxy_type = http_proxy_host = http_proxy_port = http_proxy_auth = None
+        logger.debug(f'run start device: {self.device_id} user_id: {self.user_id} proxy: {self.proxy_url}')
         threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type, http_proxy_host=http_proxy_host,
                             http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, reconnect=True)
