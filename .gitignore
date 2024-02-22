@@ -1,0 +1,31 @@
+.idea
+*.pyc
+__pycache__
+*~
+*\#
+.\#*
+
+build
+.build/
+dist
+*.egg-info
+
+.cache/
+compliance/reports/
+.eggs
+.vscode
+
+# venv
+venv/
+.venv/
+.env/
+
+# PyCharm
+.idea/
+
+# Sphinx documentation
+docs/build/
+
+# Code coverage
+.coverage
+coverage.xml

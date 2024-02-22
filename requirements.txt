@@ -1,0 +1,3 @@
+websocket-client==1.7.0
+loguru==0.7.2
+python-socks==2.4.4
