@@ -1,5 +1,6 @@
 import json
 import ssl
+import sys
 import threading
 import time
 import uuid
@@ -7,6 +8,10 @@ from urllib.parse import urlparse
 
 import websocket
 from loguru import logger
+
+logger.remove()  # 移除默认的控制台输出处理器
+
+logger.add(sys.stdout, level="INFO")  # 添加新的控制台输出处理器
 
 
 def parse_proxy_url(proxy_url):
@@ -37,6 +42,9 @@ class PyGrassClient:
         )
         self.proxy_url = proxy_url
 
+    def info(self, message):
+        return f'\n------\n[{message}]\n[user_id: {self.user_id}]\n[proxy_url: {self.proxy_url}]\n[device_id: {self.device_id}]\n------\n'
+
     def send_ping(self, wsapp):
         while True:
             time.sleep(20)
@@ -49,7 +57,7 @@ class PyGrassClient:
                 logger.error(f'ping error: {e}')
 
     def on_error(self, wsapp, err):
-        logger.error(f"Connect error: {err}")
+        logger.error(self.info(f'Connect error: {err}'))
 
     def on_message(self, wsapp, message):
         message = json.loads(message)
@@ -69,7 +77,7 @@ class PyGrassClient:
             }
             logger.debug(f'send {auth_response}')
             wsapp.send(json.dumps(auth_response))
-            # logger.info(f'[在线] [{user_id}] [{device_id}] [{proxy_url}]')
+            logger.info(self.info("连接成功"))
         elif message.get("action") == "PONG":
             pong_response = {"id": message["id"], "origin_action": "PONG"}
             logger.debug(f'send {pong_response}')
@@ -80,8 +88,21 @@ class PyGrassClient:
             proxy_type, http_proxy_host, http_proxy_port, http_proxy_auth = parse_proxy_url(self.proxy_url)
         else:
             proxy_type = http_proxy_host = http_proxy_port = http_proxy_auth = None
-        logger.debug(f'run start device: {self.device_id} user_id: {self.user_id} proxy: {self.proxy_url}')
+        logger.info(self.info('Run start'))
         threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type, http_proxy_host=http_proxy_host,
                             http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, reconnect=True)
 
+
+def run_mult_acc(acc_file_path):
+    with open(acc_file_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if "==" in line:
+                account, proxy = line.split('==')
+            else:
+                account, proxy = line, None
+            proxy = proxy or None
+            threading.Thread(target=PyGrassClient(account, proxy).run, daemon=True).start()
+    while True:
+        time.sleep(1)

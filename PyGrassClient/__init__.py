@@ -1,4 +1,4 @@
-from PyGrassClient.PyGrassClient import PyGrassClient
+from PyGrassClient.PyGrassClient import PyGrassClient, run_mult_acc
 
-__all__ = ['PyGrassClient']
-__version__ = "1.0.2"
+__all__ = ['PyGrassClient', 'run_mult_acc']
+

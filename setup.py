@@ -1,23 +1,30 @@
+import os
 from distutils.core import setup
 
 from setuptools import find_packages
 
-with open("README.md", "r") as f:
+with open("README.md", "r", encoding='utf-8') as f:
     long_description = f.read()
+
+about = {}
+here = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(here, "PyGrassClient", "__version__.py"), "r", encoding="utf-8") as f:
+    exec(f.read(), about)
+
 setup(name='PyGrassClient',  # 包名
-      version='1.0.3',  # 版本号
-      description='Get Grass Python Package',
+      version=about["__version__"],  # 版本号
+      description=about["__description__"],
       long_description=long_description,
       long_description_content_type='text/markdown',
-      author='confusion',
-      author_email='1107238486@qq.com',
-      url='https://github.com/Confusion-ymc/PyGrassClient',
+      author=about["__author__"],
+      author_email=about["__author_email__"],
+      url=about["__url__"],
       install_requires=[
           'websocket-client==1.7.0',
           'loguru==0.7.2',
           'python-socks==2.4.4'
       ],
-      license="Apache-2.0",
+      license=about["__license__"],
       packages=find_packages(),
       platforms=["all"],
       classifiers=[
@@ -37,4 +44,3 @@ setup(name='PyGrassClient',  # 包名
           "Topic :: Software Development :: Libraries",
       ],
       )
-
