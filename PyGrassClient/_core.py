@@ -7,6 +7,7 @@ import uuid
 from urllib.parse import urlparse
 
 import websocket
+from faker import Faker
 from loguru import logger
 
 logger.remove()  # 移除默认的控制台输出处理器
@@ -31,7 +32,7 @@ def parse_proxy_url(proxy_url):
 class PyGrassClient:
     def __init__(self, user_id, proxy_url=None):
         self.user_id = user_id
-        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        self.user_agent = Faker().chrome()
         self.device_id = str(uuid.uuid4())
         self.ws = websocket.WebSocketApp(
             "wss://proxy.wynd.network:4650/",
