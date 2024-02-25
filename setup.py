@@ -44,6 +44,7 @@ setup(name='PyGrassClient',  # 包名
           "Topic :: Software Development :: Libraries",
       ],
       project_urls={
+          "Documentation": "https://github.com/Confusion-ymc/PyGrassClient",
           "Source": "https://github.com/Confusion-ymc/PyGrassClient",
       }
       )
