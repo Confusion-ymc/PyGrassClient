@@ -8,6 +8,8 @@
 
 name: Build
 
+needs:
+    - publish-to-pypi
 on:
   push:
     tags:
