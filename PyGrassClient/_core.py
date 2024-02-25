@@ -108,7 +108,7 @@ class PyGrassClient:
                             http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, reconnect=True)
 
 
-def run_mult_acc(acc_file_path, check=False):
+def run_by_file(acc_file_path, check=False):
     index = 1
     all_clients = []
     with open(acc_file_path, 'r') as f:

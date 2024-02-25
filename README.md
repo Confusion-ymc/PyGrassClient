@@ -21,11 +21,19 @@ pip3 install PyGrassClient
  ```
  #!/usr/bin/env python
  
- from PyGrassClient import run_mult_acc
+ from PyGrassClient import run_by_file
  
- run_mult_acc('accounts.txt')
+ run_by_file('accounts.txt')
  ```
-#### **账号格式: 每一行是一个账号,如果使用代理则在后面加上 `==代理连接`, 没有代理则直接是`user_id`为一行** 
+
+### **3. Docker运行**
+ 
+1. `git clone https://github.com/Confusion-ymc/PyGrassClient.git`
+2. 添加`account.txt`文件
+3. `docker compose up --build -d`
+
+### 4. account.txt 文件格式 
+#### **每一行是一个账号,如果使用代理则在后面加上`==代理连接`, 没有代理则直接是`user_id`为一行** 
  ```text
  5242367b-d366-1234-987a-9ebd303fa8f5==http://proxy.com:8080
  5242367b-d366-1234-987a-9ebd303fa8f5

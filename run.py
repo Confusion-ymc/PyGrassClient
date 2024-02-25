@@ -1,5 +1,3 @@
-import os
+from PyGrassClient import run_by_file
 
-from PyGrassClient import PyGrassClient
-
-PyGrassClient(user_id=os.getenv('USER_ID'), proxy_url=os.getenv('PROXY_URL')).run()
+run_by_file('accounts.txt')
