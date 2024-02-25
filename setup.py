@@ -43,4 +43,7 @@ setup(name='PyGrassClient',  # 包名
           "Programming Language :: Python :: 3 :: Only",
           "Topic :: Software Development :: Libraries",
       ],
+      project_urls={
+          "Source": "https://github.com/Confusion-ymc/PyGrassClient",
+      }
       )
