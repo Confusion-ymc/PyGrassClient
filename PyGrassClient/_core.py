@@ -32,6 +32,8 @@ def parse_proxy_url(proxy_url):
 class PyGrassClient:
     def __init__(self, user_id, proxy_url=None):
         self.user_id = user_id
+        self.is_online = False
+        self.reconnect_times = 0
         self.user_agent = Faker().chrome()
         self.device_id = str(uuid.uuid4())
         self.ws = websocket.WebSocketApp(
@@ -39,7 +41,9 @@ class PyGrassClient:
             header=[
                 f"User-Agent: {self.user_agent}"],
             on_error=self.on_error,
-            on_message=self.on_message
+            on_message=self.on_message,
+            on_open=self.on_open,
+            on_close=self.on_close
         )
         self.proxy_url = proxy_url
 
@@ -57,7 +61,15 @@ class PyGrassClient:
             except Exception as e:
                 logger.error(f'ping error: {e}')
 
+    def on_open(self, wsapp):
+        self.reconnect_times += 1
+
+    def on_close(self, wsapp, close_status_code, close_msg):
+        self.is_online = False
+        logger.error(self.info(f'Connect close: {close_msg}'))
+
     def on_error(self, wsapp, err):
+        self.is_online = False
         logger.error(self.info(f'Connect error: {err}'))
 
     def on_message(self, wsapp, message):
@@ -78,7 +90,8 @@ class PyGrassClient:
             }
             logger.debug(f'send {auth_response}')
             wsapp.send(json.dumps(auth_response))
-            logger.info(self.info("连接成功"))
+            self.is_online = True
+            logger.info(self.info(f"连接成功 连接次数: {self.reconnect_times}"))
         elif message.get("action") == "PONG":
             pong_response = {"id": message["id"], "origin_action": "PONG"}
             logger.debug(f'send {pong_response}')
@@ -95,7 +108,9 @@ class PyGrassClient:
                             http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, reconnect=True)
 
 
-def run_mult_acc(acc_file_path):
+def run_mult_acc(acc_file_path, check=False):
+    index = 1
+    all_clients = []
     with open(acc_file_path, 'r') as f:
         for line in f:
             line = line.strip()
@@ -104,6 +119,13 @@ def run_mult_acc(acc_file_path):
             else:
                 account, proxy = line, None
             proxy = proxy or None
-            threading.Thread(target=PyGrassClient(account, proxy).run, daemon=True).start()
-    while True:
-        time.sleep(1)
+            if not check:
+                client = PyGrassClient(account, proxy)
+                all_clients.append(client)
+                threading.Thread(target=client.run, daemon=True).start()
+            else:
+                logger.info(f'[{index}] [account: {account}] [proxy: {proxy}]')
+            index += 1
+    while not check:
+        logger.info(f'online: {len(list(filter(lambda x:x.is_online, all_clients)))} all: {len(all_clients)}')
+        time.sleep(10)
