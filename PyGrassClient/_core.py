@@ -4,39 +4,26 @@ import sys
 import threading
 import time
 import uuid
-from urllib.parse import urlparse
 
 import websocket
 from faker import Faker
 from loguru import logger
 from websocket import setdefaulttimeout
 
+from PyGrassClient.utils import parse_proxy_url, new_session
+
 logger.remove()  # 移除默认的控制台输出处理器
 
 logger.add(sys.stdout, level="INFO")  # 添加新的控制台输出处理器
 
 
-def parse_proxy_url(proxy_url):
-    parsed_url = urlparse(proxy_url)
-
-    scheme = parsed_url.scheme
-    host = parsed_url.hostname
-    port = parsed_url.port
-    auth = None
-
-    if parsed_url.username and parsed_url.password:
-        auth = (parsed_url.username, parsed_url.password)
-
-    return scheme, host, port, auth
-
-
-class PyGrassClient:
-    def __init__(self, user_id, proxy_url=''):
+class GrassWs:
+    def __init__(self, user_id, proxy_url=None):
         self.user_id = user_id
         self.is_online = False
         self.reconnect_times = 0
         self.user_agent = Faker().chrome()
-        self.device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, proxy_url))
+        self.device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, proxy_url or ""))
         self.ws = websocket.WebSocketApp(
             "wss://proxy.wynd.network:4650/",
             header=[
@@ -110,24 +97,70 @@ class PyGrassClient:
                             http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, reconnect=True)
 
 
-def run_by_file(acc_file_path, check=False):
-    index = 1
+class PyGrassClient:
+    def __init__(self, *, user_name=None, password=None, user_id=None, proxy_url=None):
+        assert user_id or (user_name and password), Exception('must set user_name and password or set user_id!')
+        self.user_name = user_name
+        self.password = password
+        self.user_id = user_id
+        self.proxy_url = proxy_url
+        self.session = new_session(self.proxy_url)
+        self.ws = GrassWs(self.user_id, self.proxy_url)
+        self.is_login = False
+
+    def login(self):
+        assert (self.user_name and self.password), Exception('must set user_name and password!')
+        json_data = {
+            'user': self.user_name,
+            'password': self.password,
+        }
+        response = self.session.post('https://api.getgrass.io/auth/login', json=json_data).json()
+        if response["status"] == "success":
+            self.user_id = response["data"]["id"]
+            self.is_login = True
+        else:
+            raise Exception(f'login fail, [{self.user_name}, {self.password}]')
+
+    def get_dash(self):
+        response = self.session.get('https://api.getgrass.io/users/dash').json()
+        # print(sum([item['earning'] for item in response['data']['devices']]))
+        return response
+
+    def connect_ws(self):
+        if not self.user_id:
+            self.login()
+        self.ws.user_id = self.user_id
+        self.ws.run()
+
+
+def run_by_file(acc_file_path):
+    all_clients = load_account_by_file(acc_file_path)
+    for client in all_clients:
+        threading.Thread(target=client.connect_ws, daemon=True).start()
+    while True:
+        logger.info(f'online: {len(list(filter(lambda x: x.ws.is_online, all_clients)))} all: {len(all_clients)}')
+        time.sleep(10)
+
+
+def load_account_by_file(acc_file_path):
     all_clients = []
+    index = 0
     with open(acc_file_path, 'r') as f:
         for line in f:
             line = line.strip()
+            if not line:
+                continue
             if "==" in line:
-                account, proxy = line.split('==')
+                user_id, proxy_url = line.split('==')
             else:
-                account, proxy = line, None
-            proxy = proxy or None
-            if not check:
-                client = PyGrassClient(account, proxy)
-                all_clients.append(client)
-                threading.Thread(target=client.run, daemon=True).start()
+                user_id, proxy_url = line, None
+            if "---" in user_id:
+                user_name, password = user_id.split('---')
             else:
-                logger.info(f'[{index}] [account: {account}] [proxy: {proxy}]')
+                user_name = password = None
+            proxy_url = proxy_url or None
             index += 1
-    while not check:
-        logger.info(f'online: {len(list(filter(lambda x:x.is_online, all_clients)))} all: {len(all_clients)}')
-        time.sleep(10)
+            client = PyGrassClient(user_id=user_id, user_name=user_name, password=password, proxy_url=proxy_url)
+            logger.info(f'[{index}] [user_id: {user_id}] [proxy: {proxy_url}]')
+            all_clients.append(client)
+    return all_clients
