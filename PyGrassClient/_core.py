@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 import websocket
 from faker import Faker
 from loguru import logger
+from websocket import setdefaulttimeout
 
 logger.remove()  # 移除默认的控制台输出处理器
 
@@ -30,12 +31,12 @@ def parse_proxy_url(proxy_url):
 
 
 class PyGrassClient:
-    def __init__(self, user_id, proxy_url=None):
+    def __init__(self, user_id, proxy_url=''):
         self.user_id = user_id
         self.is_online = False
         self.reconnect_times = 0
         self.user_agent = Faker().chrome()
-        self.device_id = str(uuid.uuid4())
+        self.device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, proxy_url))
         self.ws = websocket.WebSocketApp(
             "wss://proxy.wynd.network:4650/",
             header=[
@@ -59,7 +60,7 @@ class PyGrassClient:
                 wsapp.send(send_message)
                 logger.debug(f'send {send_message}')
             except Exception as e:
-                logger.error(f'ping error: {e}')
+                logger.error(f'[user_id: {self.user_id}] [proxy_url: {self.proxy_url}] ping error: {e}')
 
     def on_open(self, wsapp):
         self.reconnect_times += 1
@@ -98,6 +99,7 @@ class PyGrassClient:
             wsapp.send(json.dumps(pong_response))
 
     def run(self):
+        setdefaulttimeout(30)
         if self.proxy_url:
             proxy_type, http_proxy_host, http_proxy_port, http_proxy_auth = parse_proxy_url(self.proxy_url)
         else:
