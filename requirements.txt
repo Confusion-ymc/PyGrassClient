@@ -3,4 +3,5 @@ loguru==0.7.2
 python-socks==2.4.4
 setuptools==65.5.1
 Faker==23.2.1
-requests[socks]
+requests[socks]==2.31.0
+playwright==1.41.2
