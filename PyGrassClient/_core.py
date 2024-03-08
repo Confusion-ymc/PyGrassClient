@@ -6,6 +6,7 @@ import time
 import uuid
 from urllib.parse import urlparse
 
+import rel
 import websocket
 from faker import Faker
 from loguru import logger
@@ -105,10 +106,13 @@ class PyGrassClient:
         logger.info(self.info('Run start'))
         threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type, http_proxy_host=http_proxy_host,
-                            http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, reconnect=True)
+                            http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, dispatcher=rel,
+                            reconnect=5)  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
+        rel.signal(2, rel.abort)  # Keyboard Interrupt
+        rel.dispatch()
 
 
-def run_by_file(acc_file_path, check=False):
+def run_by_file(acc_file_path):
     index = 1
     all_clients = []
     with open(acc_file_path, 'r') as f:
@@ -119,13 +123,11 @@ def run_by_file(acc_file_path, check=False):
             else:
                 account, proxy = line, None
             proxy = proxy or None
-            if not check:
-                client = PyGrassClient(account, proxy)
-                all_clients.append(client)
-                threading.Thread(target=client.run, daemon=True).start()
-            else:
-                logger.info(f'[{index}] [account: {account}] [proxy: {proxy}]')
+            client = PyGrassClient(account, proxy)
+            all_clients.append(client)
+            threading.Thread(target=client.run, daemon=True).start()
+            logger.info(f'[{index}] [account: {account}] [proxy: {proxy}]')
             index += 1
-    while not check:
-        logger.info(f'online: {len(list(filter(lambda x:x.is_online, all_clients)))} all: {len(all_clients)}')
+    while True:
+        logger.info(f'online: {len(list(filter(lambda x: x.is_online, all_clients)))} all: {len(all_clients)}')
         time.sleep(10)
