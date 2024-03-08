@@ -99,7 +99,6 @@ class GrassWs:
         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type, http_proxy_host=http_proxy_host,
                             http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, dispatcher=rel,
                             reconnect=5)  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
-        rel.signal(2, rel.abort)  # Keyboard Interrupt
         rel.dispatch()
 
 
