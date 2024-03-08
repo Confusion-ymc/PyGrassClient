@@ -6,12 +6,11 @@ import threading
 import time
 import uuid
 
-import rel
 import websocket
 from faker import Faker
 from loguru import logger
-from websocket import setdefaulttimeout
 from playwright.sync_api import sync_playwright
+from websocket import setdefaulttimeout
 
 from PyGrassClient.utils import parse_proxy_url, new_session
 
@@ -97,9 +96,8 @@ class GrassWs:
         logger.info(self.info('Run start'))
         threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
         self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type, http_proxy_host=http_proxy_host,
-                            http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth, dispatcher=rel,
-                            reconnect=5)  # Set dispatcher to automatic reconnection, 5 second reconnect delay if connection closed unexpectedly
-        rel.dispatch()
+                            http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth,
+                            reconnect=5)
 
 
 class PyGrassClient:
@@ -144,7 +142,7 @@ class PyGrassClient:
         browser = playwright.firefox.launch(proxy=browser_proxy, headless=False)
         context = browser.new_context()
         page = context.new_page()
-        page.set_default_timeout(60*1000)
+        page.set_default_timeout(60 * 1000)
         page.goto('https://app.getgrass.io/', wait_until='networkidle')
         # 如果有缓存
         if pathlib.Path(f'cookies/{self.user_name}.json').exists():
@@ -186,7 +184,8 @@ class PyGrassClient:
             f.write(localStorage)
 
         # score
-        box = page.locator('xpath=/html/body/div[1]/div[2]/main/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div[1]/div/div[1]').bounding_box()
+        box = page.locator(
+            'xpath=/html/body/div[1]/div[2]/main/div[2]/div/div[2]/div[1]/div[1]/div/div[2]/div[1]/div/div[1]').bounding_box()
         page.mouse.move(box["x"] + box["width"] / 3 * 2, box["y"] + box["height"] / 2)
         score_text = page.locator('xpath=/html/body/div[3]/div').text_content()
         total_score = float(score_text.split(':')[1].replace(',', ''))
@@ -233,5 +232,3 @@ def load_account_by_file(acc_file_path):
             logger.info(f'[{index}] [user_id: {user_id}] [proxy: {proxy_url}]')
             all_clients.append(client)
     return all_clients
-
-
