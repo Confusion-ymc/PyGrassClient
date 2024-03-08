@@ -4,3 +4,5 @@ python-socks==2.4.4
 setuptools==65.5.1
 Faker==23.2.1
 rel==0.4.9.8
+requests[socks]==2.31.0
+playwright==1.41.2
