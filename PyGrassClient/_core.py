@@ -26,7 +26,11 @@ class GrassWs:
         self.reconnect_times = 0
         self.user_agent = Faker().chrome()
         self.device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, proxy_url or ""))
-        self.ws = websocket.WebSocketApp(
+        self.proxy_url = proxy_url
+        self.ws = self.init_ws()
+
+    def init_ws(self):
+        return websocket.WebSocketApp(
             "wss://proxy.wynd.network:4650/",
             header=[
                 f"User-Agent: {self.user_agent}"],
@@ -35,7 +39,6 @@ class GrassWs:
             on_open=self.on_open,
             on_close=self.on_close
         )
-        self.proxy_url = proxy_url
 
     def info(self, message):
         return f'\n------\n[{message}]\n[user_id: {self.user_id}]\n[proxy_url: {self.proxy_url}]\n[device_id: {self.device_id}]\n------\n'
@@ -50,9 +53,11 @@ class GrassWs:
                 logger.debug(f'send {send_message}')
             except Exception as e:
                 logger.error(f'[user_id: {self.user_id}] [proxy_url: {self.proxy_url}] ping error: {e}')
+                self.ws.close()
 
     def on_open(self, wsapp):
         self.reconnect_times += 1
+        logger.debug(self.info(f'Connect open'))
 
     def on_close(self, wsapp, close_status_code, close_msg):
         self.is_online = False
@@ -95,9 +100,12 @@ class GrassWs:
             proxy_type = http_proxy_host = http_proxy_port = http_proxy_auth = None
         logger.info(self.info('Run start'))
         threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
-        self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type, http_proxy_host=http_proxy_host,
-                            http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth,
-                            reconnect=5)
+        while True:
+            self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type,
+                                http_proxy_host=http_proxy_host,
+                                http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth,
+                                reconnect=5)
+            self.ws = self.init_ws()
 
 
 class PyGrassClient:
@@ -121,7 +129,6 @@ class PyGrassClient:
         response = self.session.post('https://api.getgrass.io/auth/login', json=json_data).json()
         if response["status"] == "success":
             self.user_id = response["data"]["id"]
-            # self.is_login = True
         else:
             raise Exception(f'login fail, [{self.user_name}, {self.password}]')
 
@@ -159,7 +166,7 @@ class PyGrassClient:
                 f"localStorageData => {{ for (let item in localStorageData) localStorage.setItem(item, localStorageData[item]) }}",
                 localStorage)
 
-            page.goto('https://app.getgrass.io/dashboard', wait_until='networkidle')
+            page.goto('https://app.getgrass.io/dashboard')
 
         if page.url == 'https://app.getgrass.io/':
             page.get_by_placeholder('Username or Email').fill(self.user_name)
