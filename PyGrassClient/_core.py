@@ -211,9 +211,12 @@ def run_by_file(acc_file_path):
     all_clients = load_account_by_file(acc_file_path)
     for client in all_clients:
         threading.Thread(target=client.connect_ws, daemon=True).start()
-    while True:
-        logger.info(f'online: {len(list(filter(lambda x: x.ws.is_online, all_clients)))} all: {len(all_clients)}')
-        time.sleep(10)
+    n = 0
+    while n < 60 * 60 * 4:
+        if n % 10 == 0:
+            logger.info(f'online: {len(list(filter(lambda x: x.ws.is_online, all_clients)))} all: {len(all_clients)}')
+        n += 1
+        time.sleep(1)
 
 
 def load_account_by_file(acc_file_path):
