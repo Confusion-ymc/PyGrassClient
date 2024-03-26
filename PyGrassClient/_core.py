@@ -53,7 +53,7 @@ class GrassWs:
                 logger.debug(f'send {send_message}')
             except Exception as e:
                 logger.error(f'[user_id: {self.user_id}] [proxy_url: {self.proxy_url}] ping error: {e}')
-                self.ws.close()
+                raise e
 
     def on_open(self, wsapp):
         self.reconnect_times += 1
@@ -87,6 +87,7 @@ class GrassWs:
             wsapp.send(json.dumps(auth_response))
             self.is_online = True
             logger.info(self.info(f"连接成功 连接次数: {self.reconnect_times}"))
+            threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
         elif message.get("action") == "PONG":
             pong_response = {"id": message["id"], "origin_action": "PONG"}
             logger.debug(f'send {pong_response}')
@@ -99,12 +100,12 @@ class GrassWs:
         else:
             proxy_type = http_proxy_host = http_proxy_port = http_proxy_auth = None
         logger.info(self.info('Run start'))
-        threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
         while True:
             self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE}, proxy_type=proxy_type,
                                 http_proxy_host=http_proxy_host,
                                 http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth,
                                 reconnect=5)
+            self.is_online = False
             self.ws = self.init_ws()
 
 
@@ -211,6 +212,7 @@ def run_by_file(acc_file_path):
     all_clients = load_account_by_file(acc_file_path)
     for client in all_clients:
         threading.Thread(target=client.connect_ws, daemon=True).start()
+        time.sleep(1)
     n = 0
     while n < 60 * 60 * 4:
         if n % 10 == 0:
