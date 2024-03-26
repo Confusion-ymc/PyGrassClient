@@ -27,6 +27,7 @@ class GrassWs:
         self.user_agent = Faker().chrome()
         self.device_id = str(uuid.uuid3(uuid.NAMESPACE_DNS, proxy_url or ""))
         self.proxy_url = proxy_url
+        self.ping_thread = None
         self.ws = self.init_ws()
 
     def init_ws(self):
@@ -44,7 +45,7 @@ class GrassWs:
         return f'\n------\n[{message}]\n[user_id: {self.user_id}]\n[proxy_url: {self.proxy_url}]\n[device_id: {self.device_id}]\n------\n'
 
     def send_ping(self, wsapp):
-        while True:
+        while self.is_online:
             time.sleep(20)
             try:
                 send_message = json.dumps(
@@ -53,7 +54,10 @@ class GrassWs:
                 logger.debug(f'send {send_message}')
             except Exception as e:
                 logger.error(f'[user_id: {self.user_id}] [proxy_url: {self.proxy_url}] ping error: {e}')
-                raise e
+                self.ws.close()
+                break
+        self.is_online = False
+        self.ping_thread = None
 
     def on_open(self, wsapp):
         self.reconnect_times += 1
@@ -87,7 +91,8 @@ class GrassWs:
             wsapp.send(json.dumps(auth_response))
             self.is_online = True
             logger.info(self.info(f"连接成功 连接次数: {self.reconnect_times}"))
-            threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True).start()
+            self.ping_thread = threading.Thread(target=self.send_ping, args=(self.ws,), daemon=True)
+            self.ping_thread.start()
         elif message.get("action") == "PONG":
             pong_response = {"id": message["id"], "origin_action": "PONG"}
             logger.debug(f'send {pong_response}')
@@ -106,6 +111,8 @@ class GrassWs:
                                 http_proxy_port=http_proxy_port, http_proxy_auth=http_proxy_auth,
                                 reconnect=5)
             self.is_online = False
+            while self.ping_thread is not None:
+                time.sleep(1)
             self.ws = self.init_ws()
 
 
