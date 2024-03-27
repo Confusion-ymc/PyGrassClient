@@ -14,8 +14,8 @@ pip3 install PyGrassClient
  #!/usr/bin/env python
  
  from PyGrassClient import PyGrassClient
- 
- PyGrassClient(user_id="${userid}", user_name="${user_name}", password="${password}",proxy_url='${proxy_url}').connect_ws()
+ # 只需要userid 或者 账号密码
+ asyncio.run(PyGrassClient(user_id="${userid}", user_name="${user_name}", password="${password}",proxy_url='${proxy_url}').connect_ws())
  ```
 ### **2. 多账号运行**
  ```

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import pathlib
 import ssl
@@ -12,7 +13,8 @@ from loguru import logger
 from playwright.sync_api import sync_playwright
 from websocket import setdefaulttimeout
 
-from PyGrassClient.utils import parse_proxy_url, new_session
+from PyGrassClient._async_core import AsyncGrassWs
+from PyGrassClient.utils import parse_proxy_url, new_session, Status
 
 logger.remove()  # 移除默认的控制台输出处理器
 
@@ -124,7 +126,7 @@ class PyGrassClient:
         self.user_id = user_id
         self.proxy_url = proxy_url
         self.session = new_session(self.proxy_url)
-        self.ws = GrassWs(self.user_id, self.proxy_url)
+        self.ws = AsyncGrassWs(self.user_id, self.proxy_url)
         self.dashboard = {}
         # self.is_login = False
 
@@ -208,24 +210,29 @@ class PyGrassClient:
         browser.close()
         return self.dashboard
 
-    def connect_ws(self):
+    async def connect_ws(self):
         if not self.user_id:
             self.login()
         self.ws.user_id = self.user_id
-        self.ws.run()
+        await self.ws.run()
 
 
 def run_by_file(acc_file_path):
+    asyncio.run(aio_run_by_file(acc_file_path))
+
+
+async def aio_run_by_file(acc_file_path):
     all_clients = load_account_by_file(acc_file_path)
     for client in all_clients:
-        threading.Thread(target=client.connect_ws, daemon=True).start()
-        time.sleep(1)
+        asyncio.create_task(client.connect_ws())
+        await asyncio.sleep(1)
     n = 0
     while n < 60 * 60 * 4:
         if n % 10 == 0:
-            logger.info(f'online: {len(list(filter(lambda x: x.ws.is_online, all_clients)))} all: {len(all_clients)}')
+            logger.info(
+                f'online: {len(list(filter(lambda x: x.ws.status == Status.connected, all_clients)))} all: {len(all_clients)}')
         n += 1
-        time.sleep(1)
+        await asyncio.sleep(1)
 
 
 def load_account_by_file(acc_file_path):

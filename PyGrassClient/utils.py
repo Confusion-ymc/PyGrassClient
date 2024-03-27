@@ -1,6 +1,13 @@
+from enum import Enum
 from urllib.parse import urlparse
 
 from requests import Session
+
+
+class Status(Enum):
+    disconnect = 0
+    connecting = 1
+    connected = 2
 
 
 def parse_proxy_url(proxy_url):
