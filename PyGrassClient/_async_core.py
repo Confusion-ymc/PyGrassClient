@@ -42,10 +42,25 @@ class AsyncGrassWs:
             await asyncio.sleep(20)
         self._ping_stopped = True
 
+    def auth_response(self, message):
+        return {
+            "id": message["id"],
+            "origin_action": "AUTH",
+            "result": {
+                "browser_id": self.device_id,
+                "user_id": self.user_id,
+                "user_agent": self.user_agent,
+                "timestamp": int(time.time()),
+                "device_type": "extension",
+                "version": "3.3.2"
+            }
+        }
+
     async def run(self):
         logger.info(f'[启动] [{self.user_id}] [{self.proxy_url}]')
         asyncio.create_task(self.send_ping())
         while True:
+            ws_proxy = None
             try:
                 self.status = Status.connecting
                 if self.proxy_url:
@@ -61,8 +76,6 @@ class AsyncGrassWs:
                                        username=username, password=password)
                     ws_proxy.connect(("proxy.wynd.network", 4650))
                     logger.debug(f'[连接代理成功] [{self.user_id}] [{self.proxy_url}]')
-                else:
-                    ws_proxy = None
                 ssl_context = ssl.create_default_context()
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
@@ -85,18 +98,7 @@ class AsyncGrassWs:
                     message = json.loads(response)
                     logger.debug(f'[收到消息] [{self.user_id}] [{self.proxy_url}] [{message}]')
                     if message.get("action") == "AUTH":
-                        auth_response = {
-                            "id": message["id"],
-                            "origin_action": "AUTH",
-                            "result": {
-                                "browser_id": self.device_id,
-                                "user_id": self.user_id,
-                                "user_agent": self.user_agent,
-                                "timestamp": int(time.time()),
-                                "device_type": "extension",
-                                "version": "3.3.0"
-                            }
-                        }
+                        auth_response = self.auth_response(message)
                         logger.debug(f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{auth_response}]')
                         await self.ws.send(json.dumps(auth_response))
                         self.status = Status.connected
@@ -106,20 +108,23 @@ class AsyncGrassWs:
                         logger.debug(f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{pong_response}]')
                         await self.ws.send(json.dumps(pong_response))
             except Exception as e:
-                logger.debug(f'[连接断开] {e}')
+                logger.info(f'[连接断开] [{self.user_id}] [{self.proxy_url}] {e}')
             self.status = Status.disconnect
             if not self._stop:
                 logger.debug(f'[重新连接] [{self.user_id}] [{self.proxy_url}]')
-                await asyncio.sleep(5)
+                try:
+                    ws_proxy.close()
+                except:
+                    pass
             else:
                 while not self._ping_stopped:
                     await asyncio.sleep(1)
                 logger.info(f'手动退出 [{self.user_id}] [{self.proxy_url}]')
                 self._stopped = True
                 break
+            await asyncio.sleep(5)
 
     async def stop(self):
         self._stop = True
         if self.ws:
             await self.ws.close()
-
