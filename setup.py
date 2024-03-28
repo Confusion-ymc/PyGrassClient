@@ -1,22 +1,18 @@
 import os
-import pathlib
 from distutils.core import setup
 
-import pkg_resources
 from setuptools import find_packages
 
 with open("README.md", "r", encoding='utf-8') as f:
     long_description = f.read()
 
-with pathlib.Path('requirements.txt').open() as requirements_txt:
-    install_requires = [
-        str(requirement)
-        for requirement
-        in pkg_resources.parse_requirements(requirements_txt)
-    ]
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
 
 about = {}
-here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, "PyGrassClient", "__version__.py"), "r", encoding="utf-8") as f:
     exec(f.read(), about)
 
@@ -29,7 +25,7 @@ setup(name='PyGrassClient',  # 包名
       author=about["__author__"],
       author_email=about["__author_email__"],
       url=about["__url__"],
-      install_requires=install_requires,
+      install_requires=requirements,
       license=about["__license__"],
       packages=find_packages(),
       platforms=["all"],

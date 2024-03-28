@@ -23,22 +23,21 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.x"
-        deps_list: 'requirement'
 
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
+#    - name: Install pypa/build
+#      run: >-
+#        python3 -m
+#        pip install
+#        build
+#        --user
     - name: Build a binary wheel and a source tarball
-      run: python3 -m build
+      run: python3 setup.py sdist bdist_wheel
+
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
         name: python-package-distributions
         path: dist/
-        deps_list: 'requirement'
 
 
   publish-to-pypi:
