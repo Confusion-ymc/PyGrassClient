@@ -3,6 +3,7 @@ import json
 import ssl
 import time
 import uuid
+from datetime import datetime
 from typing import Optional
 
 import socks
@@ -12,6 +13,9 @@ from loguru import logger
 from websockets import WebSocketCommonProtocol
 
 from PyGrassClient.utils import parse_proxy_url, Status
+
+INFO = 'INFO'
+DEBUG = 'DEBUG'
 
 
 class AsyncGrassWs:
@@ -27,6 +31,13 @@ class AsyncGrassWs:
         self._ping_stopped = False
         self.server_url = "wss://proxy.wynd.network:4650/"
         self.server_hostname = "proxy.wynd.network"
+        self.logs = []
+
+    def log(self, level, message):
+        logger.log(logger.level(level).name, message)
+        self.logs.append((datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message))
+        if len(self.logs) >= 100:
+            self.logs = self.logs[-100:]
 
     async def send_ping(self):
         await asyncio.sleep(5)
@@ -35,10 +46,10 @@ class AsyncGrassWs:
                 send_message = json.dumps(
                     {"id": str(uuid.uuid4()), "version": "1.0.0", "action": "PING", "data": {}})
                 if self.ws:
-                    logger.debug(f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{send_message}]')
+                    self.log(DEBUG, f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{send_message}]')
                     await self.ws.send(send_message)
             except Exception as e:
-                logger.debug(f'[PING Error] {e}')
+                self.log(DEBUG, f'[PING Error] {e}')
             await asyncio.sleep(20)
         self._ping_stopped = True
 
@@ -57,7 +68,7 @@ class AsyncGrassWs:
         }
 
     async def run(self):
-        logger.info(f'[启动] [{self.user_id}] [{self.proxy_url}]')
+        self.log(INFO, f'[启动] [{self.user_id}] [{self.proxy_url}]')
         asyncio.create_task(self.send_ping())
         while True:
             ws_proxy = None
@@ -70,19 +81,19 @@ class AsyncGrassWs:
                     else:
                         username = password = None
                     # Initialize the connection to the server through the proxy
-                    logger.debug(f'[连接代理] [{self.user_id}] [{self.proxy_url}]')
+                    self.log(DEBUG, f'[连接代理] [{self.user_id}] [{self.proxy_url}]')
                     ws_proxy = socks.socksocket()
                     ws_proxy.set_proxy(socks.PROXY_TYPES[proxy_type.upper()], http_proxy_host, http_proxy_port,
                                        username=username, password=password)
                     ws_proxy.connect(("proxy.wynd.network", 4650))
-                    logger.debug(f'[连接代理成功] [{self.user_id}] [{self.proxy_url}]')
+                    self.log(DEBUG, f'[连接代理成功] [{self.user_id}] [{self.proxy_url}]')
                 ssl_context = ssl.create_default_context()
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
                 custom_headers = {
                     "User-Agent": self.user_agent
                 }
-                logger.debug(f'[连接服务器] [{self.user_id}] [{self.proxy_url}]')
+                self.log(DEBUG, f'[连接服务器] [{self.user_id}] [{self.proxy_url}]')
                 self.ws = await websockets.connect(
                     self.server_url,
                     ssl=ssl_context,
@@ -92,26 +103,26 @@ class AsyncGrassWs:
                     open_timeout=60
                 )
 
-                logger.debug(f'[连接服务器成功] [{self.user_id}] [{self.proxy_url}]')
+                self.log(DEBUG, f'[连接服务器成功] [{self.user_id}] [{self.proxy_url}]')
                 while True:
                     response = await self.ws.recv()
                     message = json.loads(response)
-                    logger.debug(f'[收到消息] [{self.user_id}] [{self.proxy_url}] [{message}]')
+                    self.log(DEBUG, f'[收到消息] [{self.user_id}] [{self.proxy_url}] [{message}]')
                     if message.get("action") == "AUTH":
                         auth_response = self.auth_response(message)
-                        logger.debug(f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{auth_response}]')
+                        self.log(DEBUG, f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{auth_response}]')
                         await self.ws.send(json.dumps(auth_response))
                         self.status = Status.connected
-                        logger.info(f'[在线] [{self.user_id}] [{self.proxy_url}]')
+                        self.log(INFO, f'[在线] [{self.user_id}] [{self.proxy_url}]')
                     elif message.get("action") == "PONG":
                         pong_response = {"id": message["id"], "origin_action": "PONG"}
-                        logger.debug(f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{pong_response}]')
+                        self.log(DEBUG, f'[发送消息] [{self.user_id}] [{self.proxy_url}] [{pong_response}]')
                         await self.ws.send(json.dumps(pong_response))
             except Exception as e:
-                logger.info(f'[连接断开] [{self.user_id}] [{self.proxy_url}] {e}')
+                self.log(INFO, f'[连接断开] [{self.user_id}] [{self.proxy_url}] {e}')
             self.status = Status.disconnect
             if not self._stop:
-                logger.debug(f'[重新连接] [{self.user_id}] [{self.proxy_url}]')
+                self.log(DEBUG, f'[重新连接] [{self.user_id}] [{self.proxy_url}]')
                 try:
                     ws_proxy.close()
                 except:
@@ -119,7 +130,7 @@ class AsyncGrassWs:
             else:
                 while not self._ping_stopped:
                     await asyncio.sleep(1)
-                logger.info(f'手动退出 [{self.user_id}] [{self.proxy_url}]')
+                self.log(INFO, f'手动退出 [{self.user_id}] [{self.proxy_url}]')
                 self._stopped = True
                 break
             await asyncio.sleep(5)
