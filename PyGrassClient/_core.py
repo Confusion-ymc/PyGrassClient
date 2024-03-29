@@ -126,7 +126,7 @@ class PyGrassClient:
         self.password = password
         self.user_id = user_id
         self.proxy_url = proxy_url
-        self.session = new_session(self.proxy_url)
+        self.session = None
         self.ws = AsyncGrassWs(self.user_id, self.proxy_url)
         self.dashboard = {}
         # self.is_login = False
@@ -137,6 +137,8 @@ class PyGrassClient:
             'user': self.user_name,
             'password': self.password,
         }
+        if self.session is None:
+            self.session = new_session(self.proxy_url)
         response = self.session.post('https://api.getgrass.io/auth/login', json=json_data).json()
         if response["status"] == "success":
             self.user_id = response["data"]["id"]
