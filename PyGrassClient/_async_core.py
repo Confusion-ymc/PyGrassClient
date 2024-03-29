@@ -70,6 +70,7 @@ class AsyncGrassWs:
     async def run(self):
         self.log(INFO, f'[启动] [{self.user_id}] [{self.proxy_url}]')
         asyncio.create_task(self.send_ping())
+        loop = asyncio.get_event_loop()
         while True:
             ws_proxy = None
             try:
@@ -85,7 +86,7 @@ class AsyncGrassWs:
                     ws_proxy = socks.socksocket()
                     ws_proxy.set_proxy(socks.PROXY_TYPES[proxy_type.upper()], http_proxy_host, http_proxy_port,
                                        username=username, password=password)
-                    ws_proxy.connect(("proxy.wynd.network", 4650))
+                    await loop.run_in_executor(None, ws_proxy.connect, ("proxy.wynd.network", 4650))  # 执行阻塞函数
                     self.log(DEBUG, f'[连接代理成功] [{self.user_id}] [{self.proxy_url}]')
                 ssl_context = ssl.create_default_context()
                 ssl_context.check_hostname = False
