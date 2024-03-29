@@ -119,8 +119,9 @@ class GrassWs:
 
 
 class PyGrassClient:
-    def __init__(self, *, user_name=None, password=None, user_id=None, proxy_url=None):
+    def __init__(self, *, user_name=None, password=None, user_id=None, proxy_url=None, index=None):
         assert user_id or (user_name and password), Exception('must set user_name and password or set user_id!')
+        self.index = index
         self.user_name = user_name
         self.password = password
         self.user_id = user_id
@@ -253,8 +254,8 @@ def load_account_by_file(acc_file_path):
             else:
                 user_name = password = None
             proxy_url = proxy_url or None
+            client = PyGrassClient(user_id=user_id, user_name=user_name, password=password, proxy_url=proxy_url, index=index)
             index += 1
-            client = PyGrassClient(user_id=user_id, user_name=user_name, password=password, proxy_url=proxy_url)
             logger.info(f'[{index}] [user_id: {user_id}] [proxy: {proxy_url}]')
             all_clients.append(client)
     return all_clients
