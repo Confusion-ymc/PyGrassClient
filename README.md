@@ -40,7 +40,6 @@ pip3 install PyGrassClient
 - 配置代理
   - **如果使用代理则在后面加上`==代理连接`----格式为`5242367b-d366-1258-987a-9ebd303fa8f5==socks5://proxy.com:1080`**
 
-
 - 例如：
  ```text
 5242367b-d366-1234-987a-9ebd303fa8f5==http://proxy.com:8080
@@ -48,3 +47,10 @@ pip3 install PyGrassClient
 test@qq.com---Aa@password 
 5242367b-d366-1258-987a-9ebd303fa8f5==socks5://proxy.com:1080
  ```
+
+### 5.获取 UserID
+ ```python
+from PyGrassClient import PyGrassClient
+
+PyGrassClient(user_name="example@gmail.com", password='your—password').get_user_id()
+```

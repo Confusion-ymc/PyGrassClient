@@ -50,7 +50,10 @@ class AsyncGrassWs:
                     await self.ws.send(send_message)
             except Exception as e:
                 self.log(DEBUG, f'[PING Error] {e}')
-            await asyncio.sleep(20)
+            for i in range(20):
+                if self._stop:
+                    break
+                await asyncio.sleep(1)
         self._ping_stopped = True
 
     def auth_response(self, message):

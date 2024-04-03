@@ -1,8 +1,6 @@
-websocket-client==1.7.0
 loguru==0.7.2
 python-socks==2.4.4
 setuptools==65.5.1
 Faker==23.2.1
 requests[socks]==2.31.0
-playwright==1.41.2
 websockets==12.0
